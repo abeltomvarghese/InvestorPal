@@ -22,7 +22,8 @@ public class StockServiceTest {
     @Test
     public void canReturnAllStockTest() {
         List<StockEntity> stocks = stockService.listAllStocks();
-        
+
+        System.out.println(stocks.get(0).getName());
         assertNotNull(stocks);
     }
 }

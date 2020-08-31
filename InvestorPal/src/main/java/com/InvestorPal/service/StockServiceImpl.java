@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@Service
+@Service()
 public class StockServiceImpl implements StockService{
 
     private StockEntityRepository stockEntityRepository;
