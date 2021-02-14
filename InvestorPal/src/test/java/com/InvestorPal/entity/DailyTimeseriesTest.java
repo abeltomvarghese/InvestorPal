@@ -1,11 +1,13 @@
 package com.InvestorPal.entity;
 
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class DailyTimeseriesTest {
 
@@ -49,6 +51,7 @@ public class DailyTimeseriesTest {
                             .withSplitCoefficient(DOUBLE_CONSTANT)
                             .withCobdatePartition(STRING_CONSTANT)
                             .build()).withMessage("Daily Symbol <DailyTimeseries> cannot be null");
+
         }
 
         @Test

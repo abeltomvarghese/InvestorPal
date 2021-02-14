@@ -33,16 +33,16 @@ public class MonthlyTimeseries {
     private Double close;
 
     @Column(nullable = false, name = "adjusted_close")
-    private Double adjusted_close;
+    private Double adjustedClose;
 
     @Column(nullable = false, name = "volume")
     private Long volume;
 
     @Column(nullable = false, name = "dividend_amount")
-    private Double dividend_amount;
+    private Double dividendAmount;
 
     @Column(nullable = false, name = "cobdate_partition")
-    private String cobdate_partition;
+    private String cobdatePartition;
 
     public MonthlyTimeseries() {
     }
@@ -53,10 +53,10 @@ public class MonthlyTimeseries {
         this.high = builder.high;
         this.low = builder.low;
         this.close = builder.close;
-        this.adjusted_close = builder.adjusted_close;
+        this.adjustedClose = builder.adjusted_close;
         this.volume = builder.volume;
-        this.dividend_amount = builder.dividend_amount;
-        this.cobdate_partition = builder.cobdate_partition;
+        this.dividendAmount = builder.dividend_amount;
+        this.cobdatePartition = builder.cobdate_partition;
     }
 
     public static MonthlyBuilder builder() {return new MonthlyBuilder();}
@@ -166,19 +166,19 @@ public class MonthlyTimeseries {
         return close;
     }
 
-    public Double getAdjusted_close() {
-        return adjusted_close;
+    public Double getAdjustedClose() {
+        return adjustedClose;
     }
 
     public Long getVolume() {
         return volume;
     }
 
-    public Double getDividend_amount() {
-        return dividend_amount;
+    public Double getDividendAmount() {
+        return dividendAmount;
     }
 
-    public String getCobdate_partition() {
-        return cobdate_partition;
+    public String getCobdatePartition() {
+        return cobdatePartition;
     }
 }

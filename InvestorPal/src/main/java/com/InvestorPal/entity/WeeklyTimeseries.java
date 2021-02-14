@@ -33,29 +33,29 @@ public class WeeklyTimeseries {
     private Double close;
 
     @Column(nullable = false, name = "adjusted_close")
-    private Double adjusted_close;
+    private Double adjustedClose;
 
     @Column(nullable = false, name = "volume")
     private Long volume;
 
     @Column(nullable = false, name = "dividend_amount")
-    private Double dividend_amount;
+    private Double dividendAmount;
 
     @Column(nullable = false, name = "cobdate_partition")
-    private String cobdate_partition;
+    private String cobdatePartition;
 
     public WeeklyTimeseries() {
     }
 
     private WeeklyTimeseries(WeeklyBuilder weeklyBuilder) {
-        this.cobdate_partition = weeklyBuilder.cobdate_partition;
+        this.cobdatePartition = weeklyBuilder.cobdate_partition;
         this.open = weeklyBuilder.open;
         this.high = weeklyBuilder.high;
         this.low = weeklyBuilder.low;
         this.close = weeklyBuilder.close;
-        this.adjusted_close = weeklyBuilder.adjusted_close;
+        this.adjustedClose = weeklyBuilder.adjusted_close;
         this.volume = weeklyBuilder.volume;
-        this.dividend_amount = weeklyBuilder.dividend_amount;
+        this.dividendAmount = weeklyBuilder.dividend_amount;
         this.symbol = weeklyBuilder.weekly_symbol;
     }
 
@@ -135,8 +135,8 @@ public class WeeklyTimeseries {
         return id;
     }
 
-    public String getCobdate_partition() {
-        return cobdate_partition;
+    public String getCobdatePartition() {
+        return cobdatePartition;
     }
 
     public Double getOpen() {
@@ -155,16 +155,16 @@ public class WeeklyTimeseries {
         return close;
     }
 
-    public Double getAdjusted_close() {
-        return adjusted_close;
+    public Double getAdjustedClose() {
+        return adjustedClose;
     }
 
     public Long getVolume() {
         return volume;
     }
 
-    public Double getDividend_amount() {
-        return dividend_amount;
+    public Double getDividendAmount() {
+        return dividendAmount;
     }
 
     public String getSymbol() {

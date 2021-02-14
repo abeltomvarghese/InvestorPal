@@ -32,33 +32,33 @@ public class DailyTimeseries {
     private Double close;
 
     @Column(nullable = false, name = "adjusted_close")
-    private Double adjusted_close;
+    private Double adjustedClose;
 
     @Column(nullable = false, name = "volume")
     private Long volume;
 
     @Column(nullable = false, name = "dividend_amount")
-    private Double dividend_amount;
+    private Double dividendAmount;
 
     @Column(nullable = false, name = "split_coefficient")
-    private Double split_coefficient;
+    private Double splitCoefficient;
 
     @Column(nullable = false, name = "cobdate_partition")
-    private String cobdate_partition;
+    private String cobdatePartition;
 
     public DailyTimeseries() {
     }
 
     private DailyTimeseries(DailyBuilder dailyBuilder) {
-        this.cobdate_partition = dailyBuilder.cobdate_partition;
+        this.cobdatePartition = dailyBuilder.cobdate_partition;
         this.open = dailyBuilder.open;
         this.high = dailyBuilder.high;
         this.low = dailyBuilder.low;
         this.close = dailyBuilder.close;
-        this.adjusted_close = dailyBuilder.adjusted_close;
+        this.adjustedClose = dailyBuilder.adjusted_close;
         this.volume = dailyBuilder.volume;
-        this.dividend_amount = dailyBuilder.dividend_amount;
-        this.split_coefficient = dailyBuilder.split_coefficient;
+        this.dividendAmount = dailyBuilder.dividend_amount;
+        this.splitCoefficient = dailyBuilder.split_coefficient;
         this.symbol = dailyBuilder.daily_symbol;
     }
 
@@ -146,8 +146,8 @@ public class DailyTimeseries {
         return id;
     }
 
-    public String getCobdate_partition() {
-        return cobdate_partition;
+    public String getCobdatePartition() {
+        return cobdatePartition;
     }
 
     public Double getOpen() {
@@ -166,20 +166,20 @@ public class DailyTimeseries {
         return close;
     }
 
-    public Double getAdjusted_close() {
-        return adjusted_close;
+    public Double getAdjustedClose() {
+        return adjustedClose;
     }
 
     public Long getVolume() {
         return volume;
     }
 
-    public Double getDividend_amount() {
-        return dividend_amount;
+    public Double getDividendAmount() {
+        return dividendAmount;
     }
 
-    public Double getSplit_coefficient() {
-        return split_coefficient;
+    public Double getSplitCoefficient() {
+        return splitCoefficient;
     }
 
     public String getSymbol() {

@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,6 +34,12 @@ public class StockController {
         }
 
         return new ResponseEntity<List<StockEntity>>(list, HttpStatus.OK);
+    }
+
+    @GetMapping("/{ticker}")
+    public ResponseEntity<String> getForecast(@PathVariable("ticker") String ticker) {
+        String responseString = String.format("%s is a good investment", ticker);
+        return new ResponseEntity<String>(responseString, HttpStatus.OK);
     }
 
 }
