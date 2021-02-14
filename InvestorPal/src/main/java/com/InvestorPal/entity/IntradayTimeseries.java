@@ -35,7 +35,7 @@ public class IntradayTimeseries {
     private Long volume;
 
     @Column(nullable = false, name = "cobdate_partition")
-    private String cobdate_partition;
+    private String cobdatePartition;
 
     public IntradayTimeseries() {
     }
@@ -47,7 +47,7 @@ public class IntradayTimeseries {
         this.low = builder.low;
         this.close = builder.close;
         this.volume = builder.volume;
-        this.cobdate_partition = builder.cobdate_partition;
+        this.cobdatePartition = builder.cobdate_partition;
     }
 
     public static IntradayBuilder builder() {return new IntradayBuilder();}
@@ -137,7 +137,7 @@ public class IntradayTimeseries {
         return volume;
     }
 
-    public String getCobdate_partition() {
-        return cobdate_partition;
+    public String getCobdatePartition() {
+        return cobdatePartition;
     }
 }

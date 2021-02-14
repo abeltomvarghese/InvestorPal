@@ -27,12 +27,12 @@ class StockEntityRepositoryTest {
 
     @Test
     void canSaveStock() {
-        stockEntityRepository.save(stockEntityOf("Tesla", "TSLA"));
+        stockEntityRepository.save(stockEntityOf("International Business Machines Corporation", "IBM"));
     }
 
     @Test
     void findBySymbolReturnsStock() {
-        final StockEntity expectedEntity = stockEntityRepository.save(stockEntityOf("Apple Inc.", "AAPL"));
+        final StockEntity expectedEntity = stockEntityRepository.save(stockEntityOf("J P Morgan Chase & Co", "JPM"));
 
         final Optional<StockEntity> actualEntity = stockEntityRepository.findById(expectedEntity.getSymbol());
 
@@ -46,18 +46,18 @@ class StockEntityRepositoryTest {
 
     @Test
     void FindBySymbolQueryTest() {
-        stockEntityRepository.save(stockEntityOf("Berkshire Hathaway","BRK.A"));
+        stockEntityRepository.save(stockEntityOf("J P Morgan Chase & Co","JPM"));
 
-        StockEntity testStock = stockEntityRepository.findBySymbolIgnoreCase("brk.a");
-        assertEquals("BRK.A",testStock.getSymbol());
+        StockEntity testStock = stockEntityRepository.findBySymbolIgnoreCase("jpm");
+        assertEquals("JPM",testStock.getSymbol());
     }
 
     @Test
     void FindStockByNameTest() {
-        stockEntityRepository.save(stockEntityOf("Jupai Holdings","JP"));
+        stockEntityRepository.save(stockEntityOf("J P Morgan Chase & Co","JP"));
 
-        StockEntity stockEntity = stockEntityRepository.findByNameIgnoreCase("jupai hOldings");
-        assertEquals("Jupai Holdings", stockEntity.getName());
+        StockEntity stockEntity = stockEntityRepository.findByNameIgnoreCase("j p morgan chase & co");
+        assertEquals("J P Morgan Chase & Co", stockEntity.getName());
     }
 
 }

@@ -3,11 +3,7 @@ package com.InvestorPal.repository;
 import com.InvestorPal.entity.DailyTimeseries;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.web.servlet.RequestBuilder;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.util.List;
 
@@ -43,18 +39,19 @@ public class DailyTimeseriesRepositoryTest {
                 255555221L,2.3400,3.4000,"2020-02-04");
     }
 
-    @Test
+    /*@Test
     public void canSaveTest() {
         dailyTimeseriesRepository.save(initTimeseries());
-    }
+    }*/
 
     @Test
     public void findBySymbolTest() {
         dailyTimeseriesRepository.save(initTimeseries());
 
-        List<DailyTimeseries> timeseries = dailyTimeseriesRepository.findBySymbolIgnoreCase("aapl");
+        List<DailyTimeseries> timeseries = dailyTimeseriesRepository.findBySymbolIgnoreCaseOrderByCobdatePartitionAsc("jpm");
 
-        assertEquals("AAPL",timeseries.get(0).getSymbol());
-
+        assertEquals("JPM",timeseries.get(0).getSymbol());
+        assertEquals("1999-11-01",timeseries.get(0).getCobdatePartition());
+        System.out.println("FIRST DATE: " + timeseries.get(0).getCobdatePartition());
     }
 }
