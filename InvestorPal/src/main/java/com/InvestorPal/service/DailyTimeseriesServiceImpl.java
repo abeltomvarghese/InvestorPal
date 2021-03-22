@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.text.DecimalFormat;
 import java.util.List;
 
 import static weka.core.converters.ConverterUtils.DataSource;
@@ -34,13 +35,27 @@ public class DailyTimeseriesServiceImpl implements TimeseriesService {
     private List<DailyTimeseries> dailyTimeseriesList;
     private static final String CSV_SEPARATOR = ",";
 
+    private GaussianProcesses gpModel;
+    private LinearRegression linearModel;
+    private IBk knnModel;
+    private SMOreg svrModel;
+    private REPTree decisionTreeModel;
+    private MultilayerPerceptron mlpModel;
+
+
     @Autowired
     public DailyTimeseriesServiceImpl(DailyTimeseriesRepository dailyTimeseriesRepository) {
         this.dailyTimeseriesRepository = dailyTimeseriesRepository;
+        this.gpModel = new GaussianProcesses();
+        this.linearModel = new LinearRegression();
+        this.knnModel = new IBk();
+        this.svrModel = new SMOreg();
+        this.decisionTreeModel = new REPTree();
+        this.mlpModel = new MultilayerPerceptron();
     }
 
     @Override
-    public List getTimeseriesForecast(String symbol, MLmodel modelType) {
+    public Object[][] getTimeseriesForecast(String symbol, MLmodel modelType) {
         List<List<NumericPrediction>> forecastedData = null;
 
         dailyTimeseriesList = getTimeseriesData(symbol);
@@ -48,19 +63,33 @@ public class DailyTimeseriesServiceImpl implements TimeseriesService {
         convertToARFF(dailyTimeseriesList);
         Instances fullData = loadARFFData();
 
-        int numRecords = fullData.numInstances();
-        int trainingSplit = (60 * numRecords)/100;
+        int trainingSplit = getTrainingSplit(fullData);
 
-        Instances trainingData = new Instances(fullData, 0,trainingSplit);
+        Instances trainingData = getTrainingData(fullData, trainingSplit);
 
-        Instances testData = new Instances(fullData);
-        testData.delete();
+        Instances testData = getTestData(fullData, trainingSplit);
 
-        for (int recordIndex = trainingSplit;recordIndex < fullData.numInstances();recordIndex++){
-            Instance eachRecord = fullData.get(recordIndex);
-            testData.add(eachRecord);
+        forecastedData = getForecastFromModel(modelType, trainingData, testData);
+        System.out.println(forecastedData.toString());
+        double predActData[][] = getComparisonForAllValues(forecastedData, testData);
+
+        Object curatedData[][] = new Object[testData.numInstances()][3];
+
+        DecimalFormat df = new DecimalFormat("#.##");
+
+        for (int x = 0; x<testData.numInstances(); x++) {
+            String recordString = testData.get(x).toString();
+            String date = recordString.substring(recordString.length()-10);
+            curatedData[x][0] = date;
+            curatedData[x][1] = predActData[x][1];
+            curatedData[x][2] = Double.parseDouble(df.format(predActData[x][0]));
         }
 
+        return curatedData;
+    }
+
+    private List<List<NumericPrediction>> getForecastFromModel(MLmodel modelType, Instances trainingData, Instances testData) {
+        List<List<NumericPrediction>> forecastedData = null;
         switch (modelType) {
             case GAUSSIAN_PROCESS:
                 forecastedData = forecastGaussianProcess(trainingData, testData);
@@ -75,14 +104,12 @@ public class DailyTimeseriesServiceImpl implements TimeseriesService {
                 forecastedData = forecastSupportVectorReg(trainingData, testData);
                 break;
             case DECISION_TREE:
-                forecastedData = forecastDecisionTree(trainingData,testData);
+                forecastedData = forecastDecisionTree(trainingData, testData);
                 break;
             case NEURAL_NETWORK:
-                forecastedData = forecastNeuralNetworks(trainingData,testData);
+                forecastedData = forecastNeuralNetworks(trainingData, testData);
                 break;
         }
-
-
         return forecastedData;
     }
 
@@ -211,6 +238,99 @@ public class DailyTimeseriesServiceImpl implements TimeseriesService {
         }
     }
 
+    public int getTrainingSplit(Instances fullData) {
+        int numRecords = fullData.numInstances();
+        int trainingSplit = (60 * numRecords)/100;
+
+        return trainingSplit;
+    }
+
+    public Instances getTrainingData(Instances fullData, int trainingSplit) {
+        return new Instances(fullData, 0,trainingSplit);
+    }
+
+    public Instances getTestData(Instances fullData, int trainingSplit) {
+        Instances testData = new Instances(fullData);
+        testData.delete();
+
+        for (int recordIndex = trainingSplit;recordIndex < fullData.numInstances();recordIndex++){
+            Instance eachRecord = fullData.get(recordIndex);
+            testData.add(eachRecord);
+        }
+        return testData;
+    }
+
+    public double[][] getComparisonForAllValues(List<List<NumericPrediction>> predictions, Instances testData) {
+        double allValues[][] = new double[testData.numInstances()][2];
+
+        for (int x = 0; x<testData.numInstances(); x++) {
+            allValues[x][0] = Double.parseDouble(String.valueOf(predictions.get(x).get(0).predicted()));
+            allValues[x][1] = testData.get(x).value(4);
+        }
+
+        return allValues;
+    }
+
+    public double findRMSPE(double allValues[][]) {
+        double errorRate = 0.0d;
+        double sum = 0.0;
+        double[] individualVals = new double[allValues.length];
+        try{
+            for(int x = 0; x < allValues.length; x++) {
+                String truthVal = String.valueOf(allValues[x][1]).toString();
+                String predVal = String.valueOf(allValues[x][0]).toString();
+
+                double dTruth = Double.parseDouble(truthVal) * 1000000000;
+                double dPred = Double.parseDouble(predVal) * 1000000000;
+
+                double difference = dTruth - dPred;
+                String diff = String.valueOf(difference).toString();
+                difference = Double.parseDouble(diff);
+
+                double percentDiff = difference / dTruth;
+                percentDiff *= 1000000000;
+                String pDiff = String.valueOf(percentDiff).toString();
+                percentDiff = Double.parseDouble(pDiff);
+
+                String squaredVal = String.valueOf(Math.pow(percentDiff,2)).toString();
+                individualVals[x] = Double.parseDouble(squaredVal);
+                sum += individualVals[x];
+            }
+
+            errorRate = Math.sqrt(sum/allValues.length);
+            String sErr = String.valueOf(errorRate);
+            errorRate = Double.parseDouble(sErr);
+            errorRate = errorRate / 1000000000;
+            errorRate = errorRate * 100;
+        } catch (Exception e) {
+            System.out.println("Error Cause" + e.getCause());
+            System.out.println("Error Message" + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return errorRate;
+    }
+
+    public double getRMSE(MLmodel modelType) {
+        double errorRate = 0.0;
+        List<List<NumericPrediction>> forecastedData = null;
+
+        Instances fullData = loadARFFData();
+
+        int trainingSplit = getTrainingSplit(fullData);
+        Instances trainingData = getTrainingData(fullData, trainingSplit);
+        Instances testData = getTestData(fullData, trainingSplit);
+
+        double allValues[][];
+
+        forecastedData = getForecastFromModel(modelType, trainingData, testData);
+
+        allValues = getComparisonForAllValues(forecastedData, testData);
+        errorRate = findRMSPE(allValues);
+
+        return errorRate;
+    }
+
     @Override
     public List<List<NumericPrediction>> forecastGaussianProcess(Instances trainingData, Instances testData) {
         WekaForecaster forecaster = new WekaForecaster();
@@ -218,7 +338,7 @@ public class DailyTimeseriesServiceImpl implements TimeseriesService {
 
         try {
             forecaster.setFieldsToForecast("stock_close");
-            forecaster.setBaseForecaster(new GaussianProcesses());
+            forecaster.setBaseForecaster(gpModel);
 
             forecaster.getTSLagMaker().setTimeStampField("cobdate_partition");
             forecaster.getTSLagMaker().setMinLag(1);
@@ -249,7 +369,7 @@ public class DailyTimeseriesServiceImpl implements TimeseriesService {
 
         try {
             forecaster.setFieldsToForecast("stock_close");
-            forecaster.setBaseForecaster(new LinearRegression());
+            forecaster.setBaseForecaster(linearModel);
 
             forecaster.getTSLagMaker().setTimeStampField("cobdate_partition");
             forecaster.getTSLagMaker().setMinLag(1);
@@ -280,7 +400,7 @@ public class DailyTimeseriesServiceImpl implements TimeseriesService {
 
         try {
             forecaster.setFieldsToForecast("stock_close");
-            forecaster.setBaseForecaster(new IBk());
+            forecaster.setBaseForecaster(knnModel);
 
             forecaster.getTSLagMaker().setTimeStampField("cobdate_partition");
             forecaster.getTSLagMaker().setMinLag(1);
@@ -311,7 +431,7 @@ public class DailyTimeseriesServiceImpl implements TimeseriesService {
 
         try {
             forecaster.setFieldsToForecast("stock_close");
-            forecaster.setBaseForecaster(new SMOreg());
+            forecaster.setBaseForecaster(svrModel);
 
             forecaster.getTSLagMaker().setTimeStampField("cobdate_partition");
             forecaster.getTSLagMaker().setMinLag(1);
@@ -342,7 +462,7 @@ public class DailyTimeseriesServiceImpl implements TimeseriesService {
 
         try {
             forecaster.setFieldsToForecast("stock_close");
-            forecaster.setBaseForecaster(new REPTree());
+            forecaster.setBaseForecaster(decisionTreeModel);
 
             forecaster.getTSLagMaker().setTimeStampField("cobdate_partition");
             forecaster.getTSLagMaker().setMinLag(1);
@@ -373,7 +493,7 @@ public class DailyTimeseriesServiceImpl implements TimeseriesService {
 
         try {
             forecaster.setFieldsToForecast("stock_close");
-            forecaster.setBaseForecaster(new MultilayerPerceptron());
+            forecaster.setBaseForecaster(mlpModel);
 
             forecaster.getTSLagMaker().setTimeStampField("cobdate_partition");
             forecaster.getTSLagMaker().setMinLag(1);

@@ -7,7 +7,7 @@ import weka.core.Instances;
 import java.util.List;
 
 public interface TimeseriesService {
-    List getTimeseriesForecast(String symbol, MLmodel modelType);
+    Object[][] getTimeseriesForecast(String symbol, MLmodel modelType);
     Instances loadARFFData();
     List getTimeseriesData(String symbol);
     List<List<NumericPrediction>> forecastGaussianProcess(Instances trainingData, Instances testData);
