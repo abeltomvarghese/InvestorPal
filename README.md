@@ -1,4 +1,4 @@
-# InvestorPal
+# InvestorPal: A Forecasting Toolkit :mortar_board:
 
 [![Generic badge](https://img.shields.io/badge/Development-COMPLETE-<COLOR>.svg)](https://shields.io/) <br>
 
