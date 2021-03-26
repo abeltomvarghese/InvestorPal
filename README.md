@@ -1,5 +1,7 @@
 # InvestorPal
 
+[![Generic badge](https://img.shields.io/badge/<Development>-<COMPLETE>-<COLOR>.svg)](https://shields.io/) <br>
+
 ## Introduction 
 
 This is a **Prototype** application that was developed as part of my BSc dissertation. The application uses: <br> 
