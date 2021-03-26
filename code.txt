@@ -1,0 +1,1238 @@
+===================================================================================================================================
+													**** InvestorPal Code ****
+===================================================================================================================================
+
+===================================================================================================================================
+													**** AlphaVantage ****
+===================================================================================================================================
+
+@Service
+public class AlphaVantage implements Stocks, API {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AlphaVantage.class);
+    private final RestTemplate restTemplate;
+	
+	private DailyTimeseriesRepository dailyTimeseriesRepository;
+	private WeeklyTimeseriesRepository weeklyTimeseriesRepository;
+	private MonthlyTimeseriesRepository monthlyTimeseriesRepository;	
+
+	@Autowired
+    public AlphaVantage(final RestTemplateBuilder restTemplateBuilder, DailyTimeseriesRepository dailyTimeseriesRepository, WeeklyTimeseriesRepository weeklyTimeseriesRepository, MonthlyTimeseriesRepository monthlyTimeseriesRepository) {
+
+        restTemplate = requireNonNull(restTemplateBuilder, "restTemplateBuilder must not be null")
+                .rootUri(getEndpoint())
+                .build();
+				
+		this.dailyTimeseriesRepository = dailyTimeseriesRepository;
+		this.weeklyTimeseriesRepository = weeklyTimeseriesRepository; 
+		this.monthlyTimeseriesRepository = monthlyTimeseriesRepository; 
+    }
+	
+
+    @Override
+    public boolean addDaily(final String symbol) {
+        LOGGER.info("getDaily");
+        LOGGER.info(format("root:\t%s", getEndpoint()));
+        LOGGER.info(format("query:\t%s", getQuery("TIME_SERIES_DAILY_ADJUSTED", symbol)));
+		
+		DailyTimeseriesAPI dt = getDaily(symbol); 
+		
+		boolean dataSaved = saveDailyData(dt, symbol); 
+		boolean dataRetrieved = !(MapUtils.isEmpty(dt.getTimeSeries()))
+		
+		boolean returnFlag = dataSaved && dataRetrieved ? true : false; 
+		
+		
+		return returnFlag; 
+    }
+	
+	public DailyTimeSeriesAPI getDaily(final String symbol) {
+	
+		DailyTimeseriesAPI dt = restTemplate.getForObject(getQuery("TIME_SERIES_DAILY_ADJUSTED", symbol), DailyTimeSeriesAPI.class);
+		
+		return dt; 
+	}
+	
+	public void saveDailyData(DailyTimeseriesAPI dt, String symbol) {
+		
+		String daily_symbol; 
+		double stock_open; 
+		double high; 
+		double low; 
+		double stock_close; 
+		double adjusted_close; 
+		Long volume; 
+		double dividend_amount; 
+		double split_coefficient; 
+		String cobdate_partition;
+		
+		Map<LocalDate, Daily> dailyData = dt.getTimeSeries(); 
+		
+		for (Map.Entry<LocalDate, Daily> entry : dailyData.entrySet()) {
+			cobdate_partition = dailyData.getKey();
+			daily_symbol = symbol; 
+			stock_open = dailyData.getValue().getOpen(); 
+			high = dailyData.getValue().getHigh(); 
+			low = dailyData.getValue().getLow(); 
+			stock_close = dailyData.getValue().getClose(); 
+			adjusted_close = dailyData.getValue().getAdjustedClose(); 
+			volume = dailyData.getValue().getVolume(); 
+			dividend_amount = dailyData.getValue().getDividendAmount(); 
+			split_coefficient = dailyData.getValue().getSplitCoefficient();
+			
+			
+			
+			DailyTimeseries dailyTimeseries = DailyTimeseries.builder().withCobdatePartition(cobdate_partition)
+																		.withDailySymbol(daily_symbol)
+																		.withOpenPrice(stock_open)
+																		.withHighPrice(high)
+																		.withLowPrice(low)
+																		.withClosePrice(stock_close)
+																		.withAdjustedClose(adjusted_close)
+																		.withVolume(volume)
+																		.withDividendAmount(dividend_amount)
+																		.withSplitCoefficient(split_coefficient)
+																		.build(); 
+			dailyTimeseriesRepository.saveAndFlush(dailyTimeseries);
+		}
+		
+		List<DailyTimeseries> list = dailyTimeseriesRepository.findBySymbolIgnoreCase(symbol); 
+		
+		boolean returnFlag = CollectionsUtils.isEmpty(list) ? false : true; 
+		
+		return returnFlag; 
+	}
+
+    @Override
+    public void addWeekly(final String symbol) {
+        LOGGER.info("getWeekly");
+        LOGGER.info(format("root:\t%s", getEndpoint()));
+        LOGGER.info(format("query:\t%s", getQuery("TIME_SERIES_WEEKLY_ADJUSTED", symbol)));
+		
+		WeeklyTimeseriesAPI wt = getWeekly(symbol); 
+		
+		boolean dataSaved = saveWeeklyData(wt, symbol); 
+		boolean dataRetrieved = !(MapUtils.isEmpty(wt.getTimeSeries()))
+		
+		boolean returnFlag = dataSaved && dataRetrieved ? true : false; 
+		
+		
+		return returnFlag; 
+		
+    }
+	
+	public WeeklyTimeSeriesAPI getWeekly(final String symbol) {
+	
+		WeeklyTimeseriesAPI wt = restTemplate.getForObject(getQuery("TIME_SERIES_WEEKLY_ADJUSTED", symbol), WeeklyTimeSeriesAPI.class);
+		
+		return wt; 
+	}
+	
+	public void saveWeeklyData(WeeklyTimeseriesAPI wt, String symbol) {
+		
+		String daily_symbol; 
+		double stock_open; 
+		double high; 
+		double low; 
+		double stock_close; 
+		double adjusted_close; 
+		Long volume; 
+		double dividend_amount; 
+		double split_coefficient; 
+		String cobdate_partition;
+		
+		Map<LocalDate, Weekly> weeklyData = wt.getTimeSeries(); 
+		
+		for (Map.Entry<LocalDate, Weekly> entry : weeklyData.entrySet()) {
+			cobdate_partition = weeklyData.getKey();
+			weekly_symbol = symbol; 
+			stock_open = weeklyData.getValue().getOpen(); 
+			high = weeklyData.getValue().getHigh(); 
+			low = weeklyData.getValue().getLow(); 
+			stock_close = weeklyData.getValue().getClose(); 
+			adjusted_close = weeklyData.getValue().getAdjustedClose(); 
+			volume = weeklyData.getValue().getVolume(); 
+			dividend_amount = weeklyData.getValue().getDividendAmount(); 
+			split_coefficient = weeklyData.getValue().getSplitCoefficient();
+			
+			
+			
+			WeeklyTimeseries weeklyTimeseries = WeeklyTimeseries.builder().withCobdatePartition(cobdate_partition)
+																		.withWeeklySymbol(weekly_symbol)
+																		.withOpenPrice(stock_open)
+																		.withHighPrice(high)
+																		.withLowPrice(low)
+																		.withClosePrice(stock_close)
+																		.withAdjustedClose(adjusted_close)
+																		.withVolume(volume)
+																		.withDividendAmount(dividend_amount)
+																		.withSplitCoefficient(split_coefficient)
+																		.build(); 
+			weeklyTimeseriesRepository.saveAndFlush(weeklyTimeseries);
+		}
+		
+		List<WeeklyTimeseries> list = weeklyTimeseriesRepository.findBySymbolIgnoreCase(symbol); 
+		
+		boolean returnFlag = CollectionsUtils.isEmpty(list) ? false : true; 
+		
+		return returnFlag; 
+	}
+	
+    @Override
+    public void addMonthly(final String symbol) {
+        LOGGER.info("getMonthly");
+        LOGGER.info(format("root:\t%s", getEndpoint()));
+        LOGGER.info(format("query:\t%s", getQuery("TIME_SERIES_MONTHLY_ADJUSTED", symbol)));
+		
+		MonthlyTimeseriesAPI mt = getMonthly(symbol); 
+		
+		boolean dataSaved = saveMonthlyData(mt, symbol); 
+		boolean dataRetrieved = !(MapUtils.isEmpty(mt.getTimeSeries()))
+		
+		boolean returnFlag = dataSaved && dataRetrieved ? true : false; 
+		
+		
+		return returnFlag; 
+    }
+
+	
+	public MonthlyTimeSeriesAPI getMonthly(final String symbol) {
+
+		MonthlyTimeseriesAPI mt = restTemplate.getForObject(getQuery("TIME_SERIES_MONTHLY_ADJUSTED", symbol), MonthlyTimeSeriesAPI.class);
+		
+		return mt; 
+	}
+	
+	public void saveMonthlyData(MonthlyTimeseriesAPI mt, String symbol) {
+		
+		String monthly_symbol; 
+		double stock_open; 
+		double high; 
+		double low; 
+		double stock_close; 
+		double adjusted_close; 
+		Long volume; 
+		double dividend_amount; 
+		double split_coefficient; 
+		String cobdate_partition;
+		
+		Map<LocalDate, Monthly> monthlyData = mt.getTimeSeries(); 
+		
+		for (Map.Entry<LocalDate, Monthly> entry : monthlyData.entrySet()) {
+			cobdate_partition = monthlyData.getKey();
+			monthly_symbol = symbol; 
+			stock_open = monthlyData.getValue().getOpen(); 
+			high = monthlyData.getValue().getHigh(); 
+			low = monthlyData.getValue().getLow(); 
+			stock_close = monthlyData.getValue().getClose(); 
+			adjusted_close = monthlyData.getValue().getAdjustedClose(); 
+			volume = monthlyData.getValue().getVolume(); 
+			dividend_amount = monthlyData.getValue().getDividendAmount(); 
+			split_coefficient = monthlyData.getValue().getSplitCoefficient();
+			
+			
+			
+			MonthlyTimeseries monthlyTimeseries = MonthlyTimeseries.builder().withCobdatePartition(cobdate_partition)
+																		.withMonthlySymbol(monthly_symbol)
+																		.withOpenPrice(stock_open)
+																		.withHighPrice(high)
+																		.withLowPrice(low)
+																		.withClosePrice(stock_close)
+																		.withAdjustedClose(adjusted_close)
+																		.withVolume(volume)
+																		.withDividendAmount(dividend_amount)
+																		.withSplitCoefficient(split_coefficient)
+																		.build(); 
+			monthlyTimeseriesRepository.saveAndFlush(monthlyTimeseries);
+		}
+		
+		List<MonthlyTimeseries> list = MonthlyTimeseriesRepository.findBySymbolIgnoreCase(symbol); 
+		
+		boolean returnFlag = CollectionsUtils.isEmpty(list) ? false : true; 
+		
+		return returnFlag; 
+	}
+	
+    private String getQuery(final String function, final String symbol) {
+        return format("/query?function=%s&symbol=%s&outputsize=full&apikey=%s", function, symbol, getKey());
+    }
+
+    @Override
+    public String getEndpoint() {
+        return "https://www.alphavantage.co";
+    }
+
+
+    @Override
+    public String getKey() {
+        return "QJAFOYP3IJR5UZ00";
+    }
+}
+
+
+===================================================================================================================================
+													**** API Interface ****
+===================================================================================================================================
+
+public interface API {
+    String getEndpoint();
+    String getKey();
+}
+
+===================================================================================================================================
+													**** Stocks Interface ****
+===================================================================================================================================
+public interface Stocks {
+    boolean addDaily(final String symbol);
+    boolean addWeekly(final String symbol);
+    boolean addMonthly(final String symbol);
+}
+
+
+===================================================================================================================================
+													**** TimeSeries Interface ****
+===================================================================================================================================
+public interface TimeSeries<S extends Series> {
+    Metadata getMetaData();
+    Map<LocalDate,S> getTimeSeries();
+}
+
+
+===================================================================================================================================
+													**** DailyTimeSeriesAPI Class ****
+===================================================================================================================================
+public class DailyTimeSeriesAPI implements TimeSeries<Daily> {
+    private Metadata metadata;
+    private Map<LocalDate, Daily> timeSeries;
+
+    @JsonCreator
+    public DailyTimeSeriesAPI(@JsonProperty(value = "Meta Data") final Metadata metadata,
+                           @JsonProperty(value = "Time Series (Daily)") final Map<LocalDate, Daily> timeSeries) {
+        this.metadata = metadata;
+        this.timeSeries = timeSeries;
+    }
+
+
+    @Override
+    public Metadata getMetaData() {
+        return metadata;
+    }
+
+    @Override
+    public Map<LocalDate, Daily> getTimeSeries() {
+        return timeSeries;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("metadata", metadata)
+                .append("timeSeries", timeSeries)
+                .toString();
+    }
+}
+
+===================================================================================================================================
+													**** WeeklyTimeSeriesAPI Class ****
+===================================================================================================================================
+public class WeeklyTimeSeriesAPI extends TimeSeries<Weekly> {
+
+	private Metadata metadata; 
+	private Map<LocalDate, Weekly> timeSeries; 
+	
+	@JsonCreator
+	public WeeklyTimeSeriesAPI(@JsonProperty("Meta Data") final Metadata metadata, 
+							@JsonProperty("Weekly Adjusted Time Series") final Map<LocalDate, Weekly> timeSeries) {
+		
+		this.metadata = metadata; 
+		this.timeSeries = timeSeries;
+		
+	}
+	
+	@Override
+	public Metadata getMetadata() {
+		return this.metadata;
+	}
+	
+	@Override
+	public Map<LocalDate, Weekly> getTimeSeries() {
+		return this.timeSeries; 
+	}
+	
+	@Override 
+	public String toString() {
+		return new ToStringBuilder(this).append("metadata", metadata).append("timeSeries", timeSeries).toString(); 
+	} 
+
+}
+
+
+===================================================================================================================================
+													**** MonthlyTimeSeriesAPI Class ****
+===================================================================================================================================
+public class MonthlyTimeSeriesAPI extends TimeSeries<Monthly> {
+
+	private Metadata metadata; 
+	private Map<LocalDate, Monthly> timeSeries; 
+	
+	@JsonCreator
+	public MonthlyTimeSeriesAPI(@JsonProperty("Meta Data") final Metadata metadata, 
+							@JsonProperty("Monthly Adjusted Time Series") final Map<LocalDate, Monthly> timeSeries) {
+		
+		this.metadata = metadata; 
+		this.timeSeries = timeSeries;
+		
+	}
+	
+	@Override
+	public Metadata getMetadata() {
+		return this.metadata;
+	}
+	
+	@Override
+	public Map<LocalDate, Monthly> getTimeSeries() {
+		return this.timeSeries; 
+	}
+	
+	@Override 
+	public String toString() {
+		return new ToStringBuilder(this).append("metadata", metadata).append("timeSeries", timeSeries).toString(); 
+	} 
+
+}
+===================================================================================================================================
+													**** DailyTSMetadata Class ****
+===================================================================================================================================
+public class DailyTSMetadata extends Metadata {
+
+    private String outputSize;
+
+    public DailyTSMetadata(@JsonProperty("1. Information") final String information,
+                           @JsonProperty("2. Symbol") final String symbol,
+                           @JsonProperty("3. Last Refreshed") final String lastRefreshed,
+                           @JsonProperty("4. Output Size") final String outputSize,
+                           @JsonProperty("5. Time Zone") final String timeZone) {
+
+        super(information, symbol, lastRefreshed, timeZone);
+        this.outputSize = outputSize;
+    }
+
+    public String getOutputSize() {
+        return outputSize;
+    }
+}
+
+===================================================================================================================================
+													**** Series Class ****
+===================================================================================================================================
+public class Series {
+    private double open;
+    private double high;
+    private double low;
+    private double close;
+	private double adjusted_close;
+    private double volume;
+	private double dividend_amount;
+
+    @JsonCreator
+    public Series(@JsonProperty(value = "1. open") final double open,
+                  @JsonProperty(value = "2. high") final double high,
+                  @JsonProperty(value = "3. low") final double low,
+                  @JsonProperty(value = "4. close") final double close,
+                  @JsonProperty(value = "5. adjusted_close") final double adjusted_close,
+				  @JsonProperty(value = "6. volume") final double volume,
+				  @JsonProperty(value = "7. dividend amount") final double dividend_amount) {
+				  
+        this.open = open;
+        this.high = high;
+        this.low = low;
+        this.close = close;
+		this.adjusted_close = adjusted_close; 
+        this.volume = volume;
+		this.dividend_amount = dividend_amount;
+    }
+
+    public double getOpen() {
+        return open;
+    }
+
+    public void setOpen(double open) {
+        this.open = open;
+    }
+
+    public double getHigh() {
+        return high;
+    }
+
+    public void setHigh(double high) {
+        this.high = high;
+    }
+
+    public double getLow() {
+        return low;
+    }
+
+    public void setLow(double low) {
+        this.low = low;
+    }
+
+    public double getClose() {
+        return close;
+    }
+	
+	public double getAdjustedClose() {
+        return adjusted_close;
+    }
+	
+    public void setClose(double close) {
+        this.close = close;
+    }
+
+    public double getVolume() {
+        return volume;
+    }
+
+    public void setVolume(double volume) {
+        this.volume = volume;
+    }
+	
+	public double getDividendAmount() {
+		return dividend_amount; 
+	}
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("open", open)
+                .append("high", high)
+                .append("low", low)
+                .append("close", close)
+                .append("volume", volume)
+                .toString();
+    }
+}
+
+===================================================================================================================================
+													**** Daily Class ****
+===================================================================================================================================
+public class Daily extends Series {
+	private double split_coefficient; 
+    
+	@JsonCreator
+    public Daily(@JsonProperty(value = "1. open") final double open,
+				  @JsonProperty(value = "2. high") final double high,
+				  @JsonProperty(value = "3. low") final double low,
+				  @JsonProperty(value = "4. close") final double close,
+				  @JsonProperty(value = "5. adjusted_close") final double adjusted_close,
+				  @JsonProperty(value = "6. volume") final double volume,
+				  @JsonProperty(value = "7. dividend amount") final double dividend_amount,
+				  @JsonProperty(value = "8. split coefficient") final double split_coefficient) {
+        
+		super(open, high, low, close, adjusted_close, volume, dividend_amount);
+		
+		this.split_coefficient = split_coefficient; 
+    }
+	
+	public double getSplitCoefficient() {
+		return this.split_coefficient; 
+	}
+}
+
+===================================================================================================================================
+													**** Weekly Class ****
+===================================================================================================================================
+
+public class Weekly extends Series {
+	
+	@JsonCreator
+    public Weekly(@JsonProperty(value = "1. open") final double open,
+				  @JsonProperty(value = "2. high") final double high,
+				  @JsonProperty(value = "3. low") final double low,
+				  @JsonProperty(value = "4. close") final double close,
+				  @JsonProperty(value = "5. adjusted_close") final double adjusted_close,
+				  @JsonProperty(value = "6. volume") final double volume,
+				  @JsonProperty(value = "7. dividend amount") final double dividend_amount) {
+        
+		super(open, high, low, close, adjusted_close, volume, dividend_amount);
+    }
+}
+
+===================================================================================================================================
+													**** Monthly Class ****
+===================================================================================================================================
+
+public class Monthly extends Series {
+	
+	@JsonCreator
+    public Monthly(@JsonProperty(value = "1. open") final double open,
+				  @JsonProperty(value = "2. high") final double high,
+				  @JsonProperty(value = "3. low") final double low,
+				  @JsonProperty(value = "4. close") final double close,
+				  @JsonProperty(value = "5. adjusted_close") final double adjusted_close,
+				  @JsonProperty(value = "6. volume") final double volume,
+				  @JsonProperty(value = "7. dividend amount") final double dividend_amount) {
+        
+		super(open, high, low, close, adjusted_close, volume, dividend_amount);
+    }
+}
+
+===================================================================================================================================
+													**** Metadata Class ****
+===================================================================================================================================
+public class Metadata {
+    private String information;
+    private String symbol;
+    private String lastRefreshed;
+
+    private String timeZone;
+
+    @JsonCreator
+    public Metadata(@JsonProperty("1. Information") final String information,
+                    @JsonProperty("2. Symbol") final String symbol,
+                    @JsonProperty("3. Last Refreshed") final String lastRefreshed,
+                    @JsonProperty("4. Time Zone") final String timeZone) {
+        this.information = information;
+        this.symbol = symbol;
+        this.lastRefreshed = lastRefreshed;
+        this.timeZone = timeZone;
+    }
+
+    public String getInformation() {
+        return information;
+    }
+
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public String getLastRefreshed() {
+        return lastRefreshed;
+    }
+
+    public String getTimeZone() {
+        return timeZone;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("information", information)
+                .append("symbol", symbol)
+                .append("lastRefreshed", lastRefreshed)
+                .append("timeZone", timeZone)
+                .toString();
+    }
+}
+
+
+===================================================================================================================================
+													**** TESTS: ALPHAVANTAGE ****
+===================================================================================================================================
+<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-collections4 -->
+<dependency>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-collections4</artifactId>
+    <version>4.4</version>
+</dependency>
+
+
+
+@SpringBootTest
+@RunWith(MockitoJUnitRunner.class) 
+public class AlphaVantageTest {
+	
+	@Mock
+	RestTemplateBuilder restTemplateBuilder; 
+	
+	@Mock
+	DailyTimeseriesRepository dailyTimeseriesRepository; 
+	
+	@InjectMocks 
+	AlphaVantage alphavantage; 
+	
+	@BeforeEach()
+	void setUp() {
+		MockitoAnnotations.initMocks(this);
+	}
+	
+	@Test 
+	void canGetDailyData() {
+		
+		DailyTimeseriesAPI dt = alphavantage.getDaily("AAPL"); 
+		
+		assertEquals(false, MapUtils.isEmpty(dt.getTimeSeries()));
+	}
+
+	@Test 
+	void canSaveDailyData() {
+		DailyTimeSeriesAPI dt = alphavantage.getDaily("BMW");
+		
+		boolean returnFlag = alphavantage.saveDailyData(dt, "BMW"); 
+		
+		assertEquals(false, MapUtils.isEmpty(dt.getTimeSeries()));
+		assertEquals(true, returnFlag);
+	}
+	
+	@Test 
+	void canAddDailyData() {
+		
+		boolean returnFlag = alphavantage.addDaily("AA")
+		
+		assertEquals(true, returnFlag);
+	}
+	
+	@Test 
+	void canGetWeeklyData() {
+		
+		WeeklyTimeseriesAPI wt = alphavantage.getWeekly("AAPL"); 
+		
+		assertEquals(false, MapUtils.isEmpty(wt.getTimeSeries()));
+	}
+
+	@Test 
+	void canSaveWeeklyData() {
+		WeeklyTimeSeriesAPI wt = alphavantage.getWeekly"BMW");
+		
+		boolean returnFlag = alphavantage.saveWeeklyData(wt, "BMW"); 
+		
+		assertEquals(false, MapUtils.isEmpty(wt.getTimeSeries()));
+		assertEquals(true, returnFlag);
+	}
+	
+	@Test 
+	void canAddWeeklyData() {
+		
+		boolean returnFlag = alphavantage.addWeekly("AA")
+		
+		assertEquals(true, returnFlag);
+	}
+	
+	@Test 
+	void canGetMonthlyData() {
+		
+		MonthlyTimeseriesAPI mt = alphavantage.getMonthly("AAPL"); 
+		
+		assertEquals(false, MapUtils.isEmpty(mt.getTimeSeries()));
+	}
+
+	@Test 
+	void canSaveMonthlyData() {
+		MonthlyTimeSeriesAPI mt = alphavantage.getMonthly("BMW");
+		
+		boolean returnFlag = alphavantage.saveMonthlyData(mt, "BMW"); 
+		
+		assertEquals(false, MapUtils.isEmpty(mt.getTimeSeries()));
+		assertEquals(true, returnFlag);
+	}
+	
+	@Test 
+	void canAddMonthlyData() {
+		
+		boolean returnFlag = alphavantage.addMonthly("AA")
+		
+		assertEquals(true, returnFlag);
+	}
+} 
+
+
+
+===================================================================================================================================
+													**** TESTS: REST CONTROLLER ****
+===================================================================================================================================
+<!-- https://mvnrepository.com/artifact/com.jayway.jsonpath/json-path -->
+<dependency>
+    <groupId>com.jayway.jsonpath</groupId>
+    <artifactId>json-path</artifactId>
+    <version>2.4.0</version>
+</dependency>
+
+
+@ExtendWith(SpringExtension.class)
+@WebMvcTest(StockController.class)
+class StockControllerTest {
+
+	@Autowired
+	private MockMvc mvc; 
+	
+	@Test 
+	void returnsListOfStocks() {
+		RequestBuilder request = get("/stock/myList");
+		
+		mvc.perform(request)
+			.andExpect(status.isOk())
+			.andExpect(jsonPath("$.", is("")))
+			.andExpect(jsonPath("$.").exists()); 
+		
+		
+	}
+	
+	@Test 
+	void returnsListOfStocks() {
+		RequestBuilder request = get("/stock/myList");
+		
+		MvcResult result = mvc.perform(request)
+								.andExpect(status().isOk())
+								.andReturn(); 
+		
+		ObjectMapper mapper = new ObjectMapper(); 
+		
+		List<StockEntity> stockList = mapper.readValue(result.getResponse.getContentAsString(), new TypeReference<List<StockEntity>>(){});
+		
+		assertEquals("Tesla", stockList.get(0).getName()); 
+	}
+
+
+}
+
+
+
+
+
+===================================================================================================================================
+													**** Development Ideas ****
+===================================================================================================================================
+
+1) Read the papers 
+2) Read the chapter on regression 
+3) code 2 ML models in java 
+4) develop upon the code 
+ 
+
+
+https://weka.sourceforge.io/doc.dev/
+
+https://blog.timescale.com/blog/time-series-compression-algorithms-explained/
+
+https://wiki.pentaho.com/display/DATAMINING/Time%2BSeries%2BAnalysis%2Band%2BForecasting%2Bwith%2BWeka#TimeSeriesAnalysisandForecastingwithWeka-3.2.5Evaluation
+https://wiki.pentaho.com/display/DATAMINING/Time%2BSeries%2BAnalysis%2Band%2BForecasting%2Bwith%2BWeka#TimeSeriesAnalysisandForecastingwithWeka-4UsingtheAPI
+
+https://weka.sourceforge.io/doc.packages/timeseriesForecasting/weka/classifiers/timeseries/WekaForecaster.html#buildForecaster(weka.core.Instances,%20java.io.PrintStream...)
+https://weka.sourceforge.io/doc.dev/weka/classifiers/evaluation/NumericPrediction.html
+https://weka.sourceforge.io/doc.packages/timeseriesForecasting/weka/classifiers/timeseries/core/OverlayForecaster.html#forecast(int,%20weka.core.Instances,%20java.io.PrintStream...)
+
+https://subscription.packtpub.com/book/big_data_and_business_intelligence/9781782163862/1/ch01lvl1sec21/using-weka-for-stock-value-forecasting-advanced
+
+> Data Preprocessing 
+	> Expanding Window Feature - similar to sliding window but the window size just expands 
+	> Incorporate lag feature of previous 7 days/weeks/months 
+
+
+> Incorporating Machine Learning Models
+	> Rest Controller Get Request with symbol 
+	> Service Tier 
+		> first get all data & rearrange 
+		> save into 3 CSV files 
+		> load as instances 
+		> FEED INTO MODELS 
+
+
+
+
+> Timeseries Interface 
+	> getTimeseries - return list of objects 
+	
+https://stackoverflow.com/questions/3666007/how-to-serialize-object-to-csv-file
+
+https://waikato.github.io/weka-wiki/formats_and_processing/save_instances_to_arff/
+
+
+import java.io.*;
+
+import java.util.List;
+import weka.core.Instances;
+import weka.classifiers.functions.GaussianProcesses;
+import weka.classifiers.evaluation.NumericPrediction;
+import weka.classifiers.timeseries.WekaForecaster;
+
+public class TimeSeriesExample {
+
+  public static void main(String[] args) {
+    try {
+
+      Instances dataset = new Instances(new BufferedReader(new FileReader("dataset/appl.arff")));
+      dataset.sort(0);
+
+      WekaForecaster forecaster = new WekaForecaster();
+      forecaster.setFieldsToForecast("Close");
+
+      forecaster.setBaseForecaster(new GaussianProcesses());
+
+      forecaster.getTSLagMaker().setTimeStampField("Date"); 
+      forecaster.getTSLagMaker().setMinLag(12);
+      forecaster.getTSLagMaker().setMaxLag(24);
+
+      forecaster.buildForecaster(dataset);
+
+      forecaster.primeForecaster(dataset);
+      
+      List<NumericPrediction> predsAtStep = forecast.get(i);
+      NumericPrediction predForTarget = predsAtStep.get(0);
+      System.out.println("" + predForTarget.predicted() + " ");
+
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
+  }
+}
+
+
+
+> loadCSVData()
+> forecastGaussianProcess()
+> forecastLinearRegression()
+> forecastKNearestNeighbours()
+> forecastSupportVectorReg()
+> forecastDecisionTree()
+> forecastNeuralNetworks()
+
+
+
+
+
+package com.InvestorPal.service;
+
+import com.InvestorPal.entity.DailyTimeseries;
+import com.InvestorPal.repository.DailyTimeseriesRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import weka.classifiers.evaluation.NumericPrediction;
+import weka.classifiers.functions.GaussianProcesses;
+import weka.classifiers.functions.LinearRegression;
+import weka.classifiers.functions.MultilayerPerceptron;
+import weka.classifiers.functions.SMOreg;
+import weka.classifiers.lazy.IBk;
+import weka.classifiers.timeseries.WekaForecaster;
+import weka.classifiers.trees.REPTree;
+import weka.core.Instances;
+import weka.core.converters.CSVLoader;
+
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
+import java.util.List;
+
+@Service
+public class DailyTimeseriesServiceImpl implements TimeseriesService {
+
+    private DailyTimeseriesRepository dailyTimeseriesRepository;
+    private List<DailyTimeseries> dailyTimeseriesList;
+    private static final String CSV_SEPARATOR = ",";
+
+    @Autowired
+    public DailyTimeseriesServiceImpl(DailyTimeseriesRepository dailyTimeseriesRepository) {
+        this.dailyTimeseriesRepository = dailyTimeseriesRepository;
+    }
+
+    @Override
+    public List getTimeseriesForecast(String symbol, MLmodel modelType) {
+        List<List<NumericPrediction>> forecastedData = null;
+
+        dailyTimeseriesList = getTimeseriesData(symbol);
+
+        convertToCSV(dailyTimeseriesList);
+        Instances fullData = loadCSVData();
+
+        int numRecords = fullData.numInstances();
+        int trainingSplit = (int) 0.6 * numRecords;
+
+        Instances trainingData = new Instances(fullData, 0,trainingSplit);
+
+        Instances testData = new Instances(fullData, trainingSplit, fullData.size()-1);
+
+        switch (modelType) {
+            case GAUSSIAN_PROCESS:
+                forecastedData = forecastGaussianProcess(trainingData, testData);
+                break;
+            case LINEAR_REGRESSION:
+                forecastedData = forecastLinearRegression(trainingData, testData);
+                break;
+            case KNN:
+                forecastedData = forecastKNearestNeighbours(trainingData, testData);
+                break;
+            case SVR:
+                forecastedData = forecastSupportVectorReg(trainingData, testData);
+                break;
+            case DECISION_TREE:
+                forecastedData = forecastDecisionTree(trainingData,testData);
+                break;
+            case NEURAL_NETWORK:
+                forecastedData = forecastNeuralNetworks(trainingData,testData);
+                break;
+        }
+
+
+        return forecastedData;
+    }
+
+    @Override
+    public Instances loadCSVData() {
+        Instances fullData = null;
+        try {
+            CSVLoader loader = new CSVLoader();
+            loader.setSource(new File("data/daily.csv"));
+
+            fullData = loader.getDataSet();
+
+        } catch (Exception e) {
+            System.out.println("Error Cause" + e.getCause());
+            System.out.println("Error Message" + e.getMessage());
+            e.printStackTrace();
+        }
+        return fullData;
+    }
+
+    @Override
+    public List getTimeseriesData(String symbol) {
+        dailyTimeseriesList = dailyTimeseriesRepository.findBySymbolIgnoreCaseOrderByCobdatePartitionAsc(symbol);
+        return dailyTimeseriesList;
+    }
+
+    @Override
+    public void convertToCSV(List<DailyTimeseries> timeseries) {
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("data/daily.csv"),"UTF-8"))) {
+            StringBuffer headers = new StringBuffer();
+
+            headers.append("daily_symbol");
+            headers.append(CSV_SEPARATOR);
+            headers.append("stock_open");
+            headers.append(CSV_SEPARATOR);
+            headers.append("high");
+            headers.append(CSV_SEPARATOR);
+            headers.append("low");
+            headers.append(CSV_SEPARATOR);
+            headers.append("stock_close");
+            headers.append(CSV_SEPARATOR);
+            headers.append("adjusted_close");
+            headers.append(CSV_SEPARATOR);
+            headers.append("volume");
+            headers.append(CSV_SEPARATOR);
+            headers.append("dividend_amount");
+            headers.append(CSV_SEPARATOR);
+            headers.append("split_coefficient");
+            headers.append(CSV_SEPARATOR);
+            headers.append("cobdate_partition");
+            bufferedWriter.write(headers.toString());
+            bufferedWriter.newLine();
+
+            for (DailyTimeseries dailyRecord : timeseries) {
+                StringBuffer oneLine = new StringBuffer();
+
+                oneLine.append(dailyRecord.getSymbol());
+                oneLine.append(CSV_SEPARATOR);
+                oneLine.append(dailyRecord.getOpen());
+                oneLine.append(CSV_SEPARATOR);
+                oneLine.append(dailyRecord.getHigh());
+                oneLine.append(CSV_SEPARATOR);
+                oneLine.append(dailyRecord.getLow());
+                oneLine.append(CSV_SEPARATOR);
+                oneLine.append(dailyRecord.getClose());
+                oneLine.append(CSV_SEPARATOR);
+                oneLine.append(dailyRecord.getAdjustedClose());
+                oneLine.append(CSV_SEPARATOR);
+                oneLine.append(dailyRecord.getVolume());
+                oneLine.append(CSV_SEPARATOR);
+                oneLine.append(dailyRecord.getDividendAmount());
+                oneLine.append(CSV_SEPARATOR);
+                oneLine.append(dailyRecord.getSplitCoefficient());
+                oneLine.append(CSV_SEPARATOR);
+//                oneLine.append(new SimpleDateFormat("yyyy-MM-dd").parse(dailyRecord.getCobdatePartition()));
+                oneLine.append(dailyRecord.getCobdatePartition());
+                bufferedWriter.write(oneLine.toString());
+                bufferedWriter.newLine();
+            }
+
+            bufferedWriter.flush();
+        } catch (Exception e) {
+            System.out.println("Error Cause" + e.getCause());
+            System.out.println("Error Message" + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public List<List<NumericPrediction>> forecastGaussianProcess(Instances trainingData, Instances testData) {
+        WekaForecaster forecaster = new WekaForecaster();
+        List<List<NumericPrediction>> forecastData = null;
+
+        try {
+            forecaster.setFieldsToForecast("stock_close");
+            forecaster.setBaseForecaster(new GaussianProcesses());
+
+            forecaster.getTSLagMaker().setTimeStampField("cobdate_partition");
+            forecaster.getTSLagMaker().setMinLag(1);
+            forecaster.getTSLagMaker().setMaxLag(12);
+
+            forecaster.getTSLagMaker().setAddDayOfWeek(true);
+            forecaster.getTSLagMaker().setAddDayOfMonth(true);
+
+            forecaster.buildForecaster(trainingData, System.out);
+
+            forecastData = forecaster.forecast(12, testData);
+
+            return forecastData;
+        } catch (Exception e) {
+            System.out.println("Error Cause: " + e.getCause());
+            System.out.println("Error Message: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return forecastData;
+    }
+
+    @Override
+    public List<List<NumericPrediction>> forecastLinearRegression(Instances trainingData, Instances testData) {
+        WekaForecaster forecaster = new WekaForecaster();
+        List<List<NumericPrediction>> forecastData = null;
+
+        try {
+            forecaster.setFieldsToForecast("stock_close");
+            forecaster.setBaseForecaster(new LinearRegression());
+
+            forecaster.getTSLagMaker().setTimeStampField("cobdate_partition");
+            forecaster.getTSLagMaker().setMinLag(1);
+            forecaster.getTSLagMaker().setMaxLag(12);
+
+            forecaster.getTSLagMaker().setAddDayOfWeek(true);
+            forecaster.getTSLagMaker().setAddDayOfMonth(true);
+
+            forecaster.buildForecaster(trainingData, System.out);
+
+            forecastData = forecaster.forecast(12, testData);
+
+            return forecastData;
+        } catch (Exception e) {
+            System.out.println("Error Cause: " + e.getCause());
+            System.out.println("Error Message: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return forecastData;
+    }
+
+    @Override
+    public List<List<NumericPrediction>> forecastKNearestNeighbours(Instances trainingData, Instances testData) {
+        WekaForecaster forecaster = new WekaForecaster();
+        List<List<NumericPrediction>> forecastData = null;
+
+        try {
+            forecaster.setFieldsToForecast("stock_close");
+            forecaster.setBaseForecaster(new IBk());
+
+            forecaster.getTSLagMaker().setTimeStampField("cobdate_partition");
+            forecaster.getTSLagMaker().setMinLag(1);
+            forecaster.getTSLagMaker().setMaxLag(12);
+
+            forecaster.getTSLagMaker().setAddDayOfWeek(true);
+            forecaster.getTSLagMaker().setAddDayOfMonth(true);
+
+            forecaster.buildForecaster(trainingData, System.out);
+
+            forecastData = forecaster.forecast(12, testData);
+
+            return forecastData;
+        } catch (Exception e) {
+            System.out.println("Error Cause: " + e.getCause());
+            System.out.println("Error Message: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return forecastData;
+    }
+
+    @Override
+    public List<List<NumericPrediction>> forecastSupportVectorReg(Instances trainingData, Instances testData) {
+        WekaForecaster forecaster = new WekaForecaster();
+        List<List<NumericPrediction>> forecastData = null;
+
+        try {
+            forecaster.setFieldsToForecast("stock_close");
+            forecaster.setBaseForecaster(new SMOreg());
+
+            forecaster.getTSLagMaker().setTimeStampField("cobdate_partition");
+            forecaster.getTSLagMaker().setMinLag(1);
+            forecaster.getTSLagMaker().setMaxLag(12);
+
+            forecaster.getTSLagMaker().setAddDayOfWeek(true);
+            forecaster.getTSLagMaker().setAddDayOfMonth(true);
+
+            forecaster.buildForecaster(trainingData, System.out);
+
+            forecastData = forecaster.forecast(12, testData);
+
+            return forecastData;
+        } catch (Exception e) {
+            System.out.println("Error Cause: " + e.getCause());
+            System.out.println("Error Message: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return forecastData;
+    }
+
+    @Override
+    public List<List<NumericPrediction>> forecastDecisionTree(Instances trainingData, Instances testData) {
+        WekaForecaster forecaster = new WekaForecaster();
+        List<List<NumericPrediction>> forecastData = null;
+
+        try {
+            forecaster.setFieldsToForecast("stock_close");
+            forecaster.setBaseForecaster(new REPTree());
+
+            forecaster.getTSLagMaker().setTimeStampField("cobdate_partition");
+            forecaster.getTSLagMaker().setMinLag(1);
+            forecaster.getTSLagMaker().setMaxLag(12);
+
+            forecaster.getTSLagMaker().setAddDayOfWeek(true);
+            forecaster.getTSLagMaker().setAddDayOfMonth(true);
+
+            forecaster.buildForecaster(trainingData, System.out);
+
+            forecastData = forecaster.forecast(12, testData);
+
+            return forecastData;
+        } catch (Exception e) {
+            System.out.println("Error Cause: " + e.getCause());
+            System.out.println("Error Message: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return forecastData;
+    }
+
+    @Override
+    public List<List<NumericPrediction>> forecastNeuralNetworks(Instances trainingData, Instances testData) {
+        WekaForecaster forecaster = new WekaForecaster();
+        List<List<NumericPrediction>> forecastData = null;
+
+        try {
+            forecaster.setFieldsToForecast("stock_close");
+            forecaster.setBaseForecaster(new MultilayerPerceptron());
+
+            forecaster.getTSLagMaker().setTimeStampField("cobdate_partition");
+            forecaster.getTSLagMaker().setMinLag(1);
+            forecaster.getTSLagMaker().setMaxLag(12);
+
+            forecaster.getTSLagMaker().setAddDayOfWeek(true);
+            forecaster.getTSLagMaker().setAddDayOfMonth(true);
+
+            forecaster.buildForecaster(trainingData, System.out);
+
+            forecastData = forecaster.forecast(12, testData);
+
+            return forecastData;
+        } catch (Exception e) {
+            System.out.println("Error Cause: " + e.getCause());
+            System.out.println("Error Message: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return forecastData;
+    }
+}
+
+
+
+
+
+File initialFile = new File("data/zoo.arff");
+InputStream targetStream = new FileInputStream(initialFile);
+
+/*LOAD IN AS DATASOURCE & CONVERT TO INSTANCES*/
+DataSource source = new DataSource(targetStream);
+Instances data = source.getDataSet();

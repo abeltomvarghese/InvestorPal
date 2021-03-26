@@ -1,0 +1,283 @@
+===================================================================================================================================
+													**** InvestorPal Code ****
+===================================================================================================================================
+
+===================================================================================================================================
+													**** AlphaVantage ****
+===================================================================================================================================
+
+@Service
+public class AlphaVantage implements Stocks, API {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AlphaVantage.class);
+    private final RestTemplate restTemplate;
+
+    public AlphaVantage(final RestTemplateBuilder restTemplateBuilder) {
+
+        restTemplate = requireNonNull(restTemplateBuilder, "restTemplateBuilder must not be null")
+                .rootUri(getEndpoint())
+                .build();
+    }
+
+
+    @Override
+    public DailyTimeSeries getDaily(final String symbol) {
+        LOGGER.info("getDaily");
+        LOGGER.info(format("root:\t%s", getEndpoint()));
+        LOGGER.info(format("query:\t%s", getQuery("TIME_SERIES_DAILY", symbol)));
+
+
+
+        return restTemplate.getForObject(getQuery("TIME_SERIES_DAILY", symbol), DailyTimeSeries.class);
+    }
+
+    @Override
+    public TimeSeries<Daily> getWeekly(final String symbol) {
+        LOGGER.info("getWeekly");
+        return null;
+    }
+
+    @Override
+    public TimeSeries<Daily> getMonthly(final String symbol) {
+        LOGGER.info("getMonthly");
+        return null;
+    }
+
+
+    private String getQuery(final String function, final String symbol) {
+        return format("/query?function=%s&symbol=%s&outputsize=full&apikey=%s", function, symbol, getKey());
+    }
+
+    @Override
+    public String getEndpoint() {
+        return "https://www.alphavantage.co";
+    }
+
+
+    @Override
+    public String getKey() {
+        return "QJAFOYP3IJR5UZ00";
+    }
+}
+
+
+===================================================================================================================================
+													**** API Interface ****
+===================================================================================================================================
+
+public interface API {
+    String getEndpoint();
+    String getKey();
+}
+
+===================================================================================================================================
+													**** Stocks Interface ****
+===================================================================================================================================
+public interface Stocks {
+    TimeSeries<Daily> getDaily(final String symbol);
+    TimeSeries<Daily> getWeekly(final String symbol);
+    TimeSeries<Daily> getMonthly(final String symbol);
+}
+
+
+===================================================================================================================================
+													**** TimeSeries Interface ****
+===================================================================================================================================
+public interface TimeSeries<S extends Series> {
+    Metadata getMetaData();
+    Map<LocalDate,S> getTimeSeries();
+}
+
+
+===================================================================================================================================
+													**** DailyTimeSeries Class ****
+===================================================================================================================================
+public class DailyTimeSeries implements TimeSeries<Daily> {
+    private Metadata metadata;
+    private Map<LocalDate, Daily> timeSeries;
+
+    @JsonCreator
+    public DailyTimeSeries(@JsonProperty(value = "Meta Data") final Metadata metadata,
+                           @JsonProperty(value = "Time Series (Daily)") final Map<LocalDate, Daily> timeSeries) {
+        this.metadata = metadata;
+        this.timeSeries = timeSeries;
+    }
+
+
+    @Override
+    public Metadata getMetaData() {
+        return metadata;
+    }
+
+    @Override
+    public Map<LocalDate, Daily> getTimeSeries() {
+        return timeSeries;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("metadata", metadata)
+                .append("timeSeries", timeSeries)
+                .toString();
+    }
+}
+
+===================================================================================================================================
+													**** DailyTSMetadata Class ****
+===================================================================================================================================
+public class DailyTSMetadata extends Metadata {
+
+    private String outputSize;
+
+    public DailyTSMetadata(@JsonProperty("1. Information") final String information,
+                           @JsonProperty("2. Symbol") final String symbol,
+                           @JsonProperty("3. Last Refreshed") final String lastRefreshed,
+                           @JsonProperty("4. Output Size") final String outputSize,
+                           @JsonProperty("5. Time Zone") final String timeZone) {
+
+        super(information, symbol, lastRefreshed, timeZone);
+        this.outputSize = outputSize;
+    }
+
+    public String getOutputSize() {
+        return outputSize;
+    }
+}
+
+===================================================================================================================================
+													**** Series Class ****
+===================================================================================================================================
+public class Series {
+    private double open;
+    private double high;
+    private double low;
+    private double close;
+    private double volume;
+
+    @JsonCreator
+    public Series(@JsonProperty(value = "1. open") final double open,
+                  @JsonProperty(value = "2. high") final double high,
+                  @JsonProperty(value = "3. low") final double low,
+                  @JsonProperty(value = "4. close") final double close,
+                  @JsonProperty(value = "5. volume") final double volume) {
+        this.open = open;
+        this.high = high;
+        this.low = low;
+        this.close = close;
+        this.volume = volume;
+    }
+
+    public double getOpen() {
+        return open;
+    }
+
+    public void setOpen(double open) {
+        this.open = open;
+    }
+
+    public double getHigh() {
+        return high;
+    }
+
+    public void setHigh(double high) {
+        this.high = high;
+    }
+
+    public double getLow() {
+        return low;
+    }
+
+    public void setLow(double low) {
+        this.low = low;
+    }
+
+    public double getClose() {
+        return close;
+    }
+
+    public void setClose(double close) {
+        this.close = close;
+    }
+
+    public double getVolume() {
+        return volume;
+    }
+
+    public void setVolume(double volume) {
+        this.volume = volume;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("open", open)
+                .append("high", high)
+                .append("low", low)
+                .append("close", close)
+                .append("volume", volume)
+                .toString();
+    }
+}
+
+===================================================================================================================================
+													**** Daily Class ****
+===================================================================================================================================
+public class Daily extends Series {
+    @JsonCreator
+    public Daily(@JsonProperty final Double open,
+                 @JsonProperty final Double high,
+                 @JsonProperty final Double low,
+                 @JsonProperty final Double close,
+                 @JsonProperty final Double volume) {
+        super(open, high, low, close, volume);
+    }
+}
+
+===================================================================================================================================
+													**** Metadata Class ****
+===================================================================================================================================
+public class Metadata {
+    private String information;
+    private String symbol;
+    private String lastRefreshed;
+
+    private String timeZone;
+
+    @JsonCreator
+    public Metadata(@JsonProperty("1. Information") final String information,
+                    @JsonProperty("2. Symbol") final String symbol,
+                    @JsonProperty("3. Last Refreshed") final String lastRefreshed,
+                    @JsonProperty("4. Time Zone") final String timeZone) {
+        this.information = information;
+        this.symbol = symbol;
+        this.lastRefreshed = lastRefreshed;
+        this.timeZone = timeZone;
+    }
+
+    public String getInformation() {
+        return information;
+    }
+
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public String getLastRefreshed() {
+        return lastRefreshed;
+    }
+
+    public String getTimeZone() {
+        return timeZone;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("information", information)
+                .append("symbol", symbol)
+                .append("lastRefreshed", lastRefreshed)
+                .append("timeZone", timeZone)
+                .toString();
+    }
+}
+
