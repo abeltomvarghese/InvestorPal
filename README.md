@@ -1,6 +1,6 @@
 # InvestorPal
 
-[![Generic badge](https://img.shields.io/badge/<Development>-<COMPLETE>-<COLOR>.svg)](https://shields.io/) <br>
+[![Generic badge](https://img.shields.io/badge/Development-COMPLETE-<COLOR>.svg)](https://shields.io/) <br>
 
 ## Introduction 
 
