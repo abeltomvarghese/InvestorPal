@@ -3,8 +3,8 @@
 ## Introduction 
 
 This is a **Prototype** application that was developed as part of my BSc dissertation. The application uses: <br> 
-> Java Spring Backend 
-> Python Script for data visualisation 
+> Java Spring Backend <br>
+> Python Script for data visualisation <br>
 > Postgres database hosted on a Docker Image. <br>
 
 ## Setting up & Running the application 
