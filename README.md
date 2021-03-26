@@ -4,7 +4,7 @@
 
 This is a **Prototype** application that was developed as part of my BSc dissertation. The application uses: <br> 
 > Java Spring Backend <br>
-> Python Script for data visualisation <br>
+> Python Script using Bokeh Library for data visualisation <br>
 > Postgres database hosted on a Docker Image. <br>
 
 ## Setting up & Running the application 
@@ -52,3 +52,4 @@ Install a docker image using the following instruction: <br>
     1. navigate to the scripts folder
     2. execute the command `. activate`
     3. navigate to the directory with the main.py file & run the commmand `python main.py`
+
